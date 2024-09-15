@@ -1,7 +1,6 @@
 async function isAllowed() {
   const channelNameTag = document.querySelector("span[itemprop=author] > link[itemprop=name]");
   if (!channelNameTag) {
-    console.log("No channel name tag found");
     return false;
   }
 
@@ -10,19 +9,30 @@ async function isAllowed() {
   return allowlist.includes(channelName);
 }
 
-(async function() {
-  if (await isAllowed()) {
-    return;
-  }
+let alreadyEjected = false; // Debounce in order to not put up the alert more than once.
+const observer = new MutationObserver(
+  async function() {
+    if (alreadyEjected) {
+      return;
+    }
 
-  // Removing the video player, or its parent elements. Doesn't work: I guess YT has JavaScript which
-  // re-adds them (probably something declarative like React). Instead, pause, show an alert, and then
-  // navigate away.
-  const videoPlayer = document.querySelector("video");
-  if (videoPlayer) {
-    videoPlayer.pause();
-  }
+    if (!window.location.pathname.startsWith("/watch")) {
+      return;
+    }
 
-  alert("Sorry, this channel isn't allowed.");
-  location.href = "/";
-})();
+    if (await isAllowed()) {
+      return;
+    }
+
+    const videoPlayer = document.querySelector("video");
+    if (videoPlayer) {
+      videoPlayer.pause();
+    }
+
+    alreadyEjected = true;
+    alert("Sorry, this channel isn't allowed");
+    window.location = "/";
+
+  }
+);
+observer.observe(document.body, { subtree: true, childList: true });
