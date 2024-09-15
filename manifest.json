@@ -1,19 +1,21 @@
 {
-  "manifest_version": 2,
-  "name": "YouTube Channel Blocker",
-  "description": "Blocks YouTube videos unless they are from an allowed channel.",
-  "version": "1.0",
+  "manifest_version": 3,
+  "name": "YouTube Allowlist",
+  "description": "Blocks YouTube videos unless they are from an allowed channel",
+  "version": "0.1",
   "permissions": [
-    "storage",
-    "webRequest",
-    "webRequestBlocking",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch*"],
+      "js": ["content.js"]
+    }
+  ],
+  "host_permissions": [
     "*://*.youtube.com/*"
   ],
-  "background": {
-    "scripts": ["background.js"],
-    "persistent": false
-  },
-  "browser_action": {
+  "action": {
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -25,10 +27,5 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  },
-  "applications": {
-    "gecko": {
-      "id": "youblocker@example.com"
-    }
   }
 }
