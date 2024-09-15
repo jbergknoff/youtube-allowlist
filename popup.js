@@ -1,35 +1,51 @@
-// Load the allowlist from storage and display it
-function loadAllowlist() {
-  chrome.storage.sync.get("allowlist", function (result) {
-      const allowlist = result.allowlist || [];
-      const allowlistElement = document.getElementById("allowlist");
-      allowlistElement.innerHTML = "";
-
-      allowlist.forEach(function (channelID) {
-          const li = document.createElement("li");
-          li.textContent = channelID;
-          li.className = "channel";
-          allowlistElement.appendChild(li);
-      });
-  });
+async function getAllowlist() {
+  return ((await chrome.storage.sync.get(["allowlist"])) || {}).allowlist || {};
 }
 
-// Add a new channel to the allowlist
-document.getElementById("addChannel").addEventListener("click", function () {
-  const channelID = document.getElementById("channelInput").value.trim();
-  if (channelID) {
-      chrome.storage.sync.get("allowlist", function (result) {
-          const allowlist = result.allowlist || [];
-          if (!allowlist.includes(channelID)) {
-              allowlist.push(channelID);
-              chrome.storage.sync.set({ allowlist: allowlist }, function () {
-                  loadAllowlist();
-              });
-          }
-      });
+// Load the allowlist from storage and display it
+async function renderAllowlist() {
+  const allowlist = await getAllowlist();
+  const allowlistElement = document.getElementById("allowlist");
+  allowlistElement.innerHTML = "";
+
+  for (const channelName of Object.keys(allowlist).sort()) {
+    const listItem = document.createElement("li");
+    listItem.textContent = channelName;
+    const removeButton = document.createElement("button");
+    removeButton.innerText = "x";
+    removeButton.addEventListener(
+      "click",
+      async () => {
+        delete allowlist[channelName.toLowerCase()];
+        await saveAllowlist(allowlist);
+        await renderAllowlist();
+      },
+    );
+    listItem.appendChild(removeButton);
+    allowlistElement.appendChild(listItem);
   }
-  document.getElementById("channelInput").value = "";
-});
+}
+
+async function saveAllowlist(allowlist) {
+  await chrome.storage.sync.set({ allowlist });
+}
+
+document.querySelector("form#add-channel").addEventListener(
+  "submit",
+  async () => {
+    const channelInput =document.getElementById("channelInput");
+    const channelName = channelInput.value.trim();
+    if (!channelName) {
+      return;
+    }
+
+    const allowlist = getAllowlist();
+    allowlist[channelName.toLowerCase()] = true;
+    await saveAllowlist(allowlist);
+    await renderAllowlist();
+    channelInput.value = "";
+  },
+);
 
 // Load the allowlist when the popup is opened
-document.addEventListener("DOMContentLoaded", loadAllowlist);
+document.addEventListener("DOMContentLoaded", renderAllowlist);
