@@ -33,13 +33,13 @@ async function saveAllowlist(allowlist) {
 document.querySelector("form#add-channel").addEventListener(
   "submit",
   async () => {
-    const channelInput =document.getElementById("channelInput");
+    const channelInput = document.getElementById("channelInput");
     const channelName = channelInput.value.trim();
     if (!channelName) {
       return;
     }
 
-    const allowlist = getAllowlist();
+    const allowlist = await getAllowlist();
     allowlist[channelName.toLowerCase()] = true;
     await saveAllowlist(allowlist);
     await renderAllowlist();

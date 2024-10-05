@@ -29,7 +29,6 @@ function getChannelName() {
 async function isAllowed() {
   const channelName = getChannelName();
   if (!channelName) {
-    console.log("No channel name found");
     return false;
   }
   const allowlist = (await chrome.storage.sync.get(["allowlist"])).allowlist || {};
@@ -45,10 +44,9 @@ setInterval(
 
     if (await isAllowed()) {
       return;
-
     }
 
     videoPlayer.pause();
   },
-  500,
+  100,
 );
