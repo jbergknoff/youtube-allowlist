@@ -12,7 +12,8 @@ async function renderAllowlist() {
     const listItem = document.createElement("li");
     listItem.textContent = channelName;
     const removeButton = document.createElement("button");
-    removeButton.innerText = "×";
+    // This button gets its "x" symbol from CSS.
+    removeButton.className = "remove";
     removeButton.addEventListener(
       "click",
       async () => {
