@@ -12,7 +12,7 @@ async function renderAllowlist() {
     const listItem = document.createElement("li");
     listItem.textContent = channelName;
     const removeButton = document.createElement("button");
-    removeButton.innerText = "x";
+    removeButton.innerText = "×";
     removeButton.addEventListener(
       "click",
       async () => {
