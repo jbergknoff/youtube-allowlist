@@ -2,51 +2,76 @@ async function getAllowlist() {
   return ((await chrome.storage.sync.get(["allowlist"])) || {}).allowlist || {};
 }
 
-// Load the allowlist from storage and display it
-async function renderAllowlist() {
-  const allowlist = await getAllowlist();
-  const allowlistElement = document.getElementById("allowlist");
-  allowlistElement.innerHTML = "";
-
-  for (const channelName of Object.keys(allowlist).sort()) {
-    const listItem = document.createElement("li");
-    listItem.textContent = channelName;
-    const removeButton = document.createElement("button");
-    // This button gets its "x" symbol from CSS.
-    removeButton.className = "remove";
-    removeButton.addEventListener(
-      "click",
-      async () => {
-        delete allowlist[channelName.toLowerCase()];
-        await saveAllowlist(allowlist);
-        await renderAllowlist();
-      },
-    );
-    listItem.appendChild(removeButton);
-    allowlistElement.appendChild(listItem);
-  }
-}
-
 async function saveAllowlist(allowlist) {
   await chrome.storage.sync.set({ allowlist });
 }
 
-document.querySelector("form#add-channel").addEventListener(
-  "submit",
-  async () => {
-    const channelInput = document.getElementById("channelInput");
-    const channelName = channelInput.value.trim();
+class AllowlistView {
+  async oninit() {
+    this.allowlist = await getAllowlist();
+    m.redraw();
+  }
+
+  view() {
+    return [
+      m("h3", "Allowed Channels"),
+      m(
+        "ul",
+        Object.keys(this.allowlist || {}).sort().map(
+          (channelName) => {
+            return m(
+              "li",
+              [
+                channelName,
+                m(
+                  "button",
+                  {
+                    class: "remove", // This button gets its "x" symbol from CSS.
+                    onclick: async () => {
+                      delete this.allowlist[channelName.toLowerCase()];
+                      await saveAllowlist(this.allowlist);
+                    },
+                  },
+                ),
+              ],
+            );
+          },
+        )
+      ),
+      m(new AddChannelForm(this.allowlist)),
+    ];
+  }
+}
+
+class AddChannelForm {
+  constructor(allowlist) {
+    this.allowlist = allowlist; // Store a reference to the parent component's state so we can trigger redraws.
+  }
+
+  async addChannel(e) {
+    e.preventDefault(); // Don't reload the page.
+
+    const channelInput = e.target.querySelector("input");
+    const channelName = (channelInput.value || "").toLowerCase().trim();
     if (!channelName) {
       return;
     }
 
-    const allowlist = await getAllowlist();
-    allowlist[channelName.toLowerCase()] = true;
-    await saveAllowlist(allowlist);
-    await renderAllowlist();
+    this.allowlist[channelName] = true;
+    await saveAllowlist(this.allowlist);
     channelInput.value = "";
-  },
-);
+  }
 
-// Load the allowlist when the popup is opened
-document.addEventListener("DOMContentLoaded", renderAllowlist);
+  view() {
+    return m(
+      "form",
+      { onsubmit: this.addChannel.bind(this) },
+      [
+        m("input", { type: "text", placeholder: "Add channel name" }),
+        m("button", { type: "submit" }, "Add"),
+      ],
+    );
+  }
+}
+
+m.mount(document.body, AllowlistView)
